@@ -438,6 +438,11 @@ interfacefound:
     pipe.interval=0;
     pipe.type=kUSBInterrupt;
     pipe.maxPacketSize=0;
+    if(controllerType == XboxOne) {
+        IOLog("interfaceFound - XboxOne\n");
+    }else if(controllerType == XboxOriginal) {
+        IOLog("interfaceFound - XboxOriginal\n");
+    }
     inPipe=interface->FindNextPipe(NULL,&pipe);
     if(inPipe==NULL) {
         IOLog("start - unable to find in pipe\n");
@@ -521,7 +526,9 @@ interfacefound:
     if (!QueueSerialRead())
         goto fail;
 nochat:
+    IOLog("debug - nochat in\n");
     if (!QueueRead())
+        IOLog("start - failed to detect chatpad interface\n");
         goto fail;
     if (controllerType == XboxOne || controllerType == XboxOnePretend360) {
         UInt8 xoneInit0[] = { 0x01, 0x20, 0x00, 0x09, 0x00, 0x04, 0x20, 0x3a, 0x00, 0x00, 0x00, 0x80, 0x00 };
@@ -530,10 +537,14 @@ nochat:
             0x1D, 0x1D, 0xFF, 0x00, 0x00 };
         UInt8 xoneInit3[] = { 0x09, 0x00, 0x00, 0x09, 0x00, 0x0F, 0x00, 0x00,
             0x00, 0x00, 0x00, 0x00, 0x00 };
-        QueueWrite(&xoneInit0, sizeof(xoneInit0));
-        QueueWrite(&xoneInit1, sizeof(xoneInit1));
-        QueueWrite(&xoneInit2, sizeof(xoneInit2));
-        QueueWrite(&xoneInit3, sizeof(xoneInit3));
+        bool init0 = QueueWrite(&xoneInit0, sizeof(xoneInit0));
+        IOLog("init0 - write done\n");
+        bool init1 = QueueWrite(&xoneInit1, sizeof(xoneInit1));
+        IOLog("init1 - write done\n");
+        bool init2 = QueueWrite(&xoneInit2, sizeof(xoneInit2));
+        IOLog("init2 - write done\n");
+        bool init3 = QueueWrite(&xoneInit3, sizeof(xoneInit3));
+        IOLog("init3 - write done\n");
     } else {
         // Disable LED
         Xbox360_Prepare(led,outLed);
@@ -542,6 +553,7 @@ nochat:
     }
 
     // Done
+    IOLog("start - try to connect pad\n");
     PadConnect();
     registerService();
     return true;
@@ -1015,6 +1027,7 @@ void Xbox360Peripheral::PadConnect(void)
             padHandler->release();
             padHandler = NULL;
         }
+        IOLog("PadConnect - Pad connect complete!\n");
     }
 }
 
